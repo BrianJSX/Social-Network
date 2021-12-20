@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .navBtn {
+    @apply hidden h-8
+    md:inline-block 
+    cursor-pointer
+    hover:scale-125
+    transition-all duration-75 ease-out;
+  }
+  .btn { 
+    @apply h-8 w-8
+    hover:scale-125
+    transition-all duration-75 ease-out cursor-pointer;
+  }
+  .active { 
+    @apply !text-blue-400
+  }
+}
