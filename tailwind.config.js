@@ -7,6 +7,7 @@ module.exports = {
   },
   variants: {
     extend: {},
+    outline: ["focus"],
   },
   plugins: [
     require('@tailwindcss/forms'),
