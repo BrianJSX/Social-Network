@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer components {
+  html { 
+    @apply overflow-x-hidden
+  }
   .navBtn {
     @apply hidden h-8
     md:inline-block 

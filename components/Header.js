@@ -77,7 +77,7 @@ function Header() {
               <UserGroupIcon className="navBtn"></UserGroupIcon>
               <HeartIcon className="navBtn"></HeartIcon>
               <img
-                className="h-10 rounded-full cursor-pointer"
+                className="h-10 w-10 object-contain border-2 rounded-full cursor-pointer"
                 src={session.user?.image}
               ></img>
             </>
