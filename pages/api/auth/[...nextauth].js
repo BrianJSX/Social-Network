@@ -59,10 +59,7 @@ export default NextAuth({
       const q = query(collection(db, "users"), where("uid", "==", token.sub));
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        session.user.username = doc.data().username;
         session.user.uid = doc.data().uid;
-        session.user.image = doc.data().avatar;
-        session.user.email = doc.data().email;
       });
 
       return session;
