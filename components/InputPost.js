@@ -19,22 +19,28 @@ import ScaleLoader from "react-spinners/ScaleLoader";
 import { css } from "@emotion/react";
 import { useSelector, useDispatch } from "react-redux";
 import { isLoading } from "../features/loading/loadingSlice";
+import { toast } from "react-toastify";
 
 function InputPost() {
   const { data: session } = useSession();
   const filePickerRef = useRef(null);
 
+  //state
   const [input, setInput] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [showEmoij, setShowEmoij] = useState(false);
 
+  //gobal state
   const loading = useSelector((state) => state.loading.isLoading);
+  const user = useSelector((state) => state.users);
   const dispatch = useDispatch();
+
   const override = css`
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    z-index: 100;
   `;
 
   const addImagePost = (e) => {
@@ -54,43 +60,70 @@ function InputPost() {
   };
 
   const sendPost = async () => {
-    await dispatch(isLoading(true));
-    
+    dispatch(isLoading(true));
+    setInput("");
+    setSelectedFile(null);
+    setShowEmoij(false);
+
     const docRef = await addDoc(collection(db, "posts"), {
-      uid: session.user.uid,
+      uid: user.uid,
+      avatar: user.avatar,
+      username: user.username,
+      name: user.name,
       caption: input,
       timestamp: serverTimestamp(),
     });
-    const imageRef = ref(storage, `posts/${docRef.id}/image`);
 
     if (selectedFile) {
+      const imageRef = ref(storage, `posts/${docRef.id}/image`);
       await uploadString(imageRef, selectedFile, "data_url").then(async () => {
         const dataUrl = await getDownloadURL(imageRef);
         await updateDoc(doc(db, "posts", docRef.id), {
           image: dataUrl,
         });
       });
-      await dispatch(isLoading(false));
     }
-    setInput("");
-    setSelectedFile(null);
-    setShowEmoij(false);
+    dispatch(isLoading(false));
+    toast.success("Đăng bài thành công !!", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
   };
 
   return (
     <div className="bg-white border-2 rounded-lg p-3 mt-5 space-x-5 relative">
       {/* Loading */}
-      <ScaleLoader
-        color="#000000"
-        loading={loading}
-        css={override}
-        size={250}
-      />
+      {loading && (
+        <ScaleLoader
+          color="#000000"
+          loading={loading}
+          css={override}
+          height={50}
+          width={8}
+          radius={2}
+          margin={2}
+        />
+      )}
+      {/* SHOW EMOIJ */}
+      {showEmoij && (
+        <Picker
+          onSelect={addEmoijIcon}
+          style={{
+            position: "absolute",
+            top: 150,
+          }}
+        ></Picker>
+      )}
       <div className="flex items-center">
         {/* AVATAR */}
         <img
           className="h-10 w-10 object-contain border-2 rounded-full cursor-pointer"
-          src={session.user?.image}
+          src={user.avatar}
         ></img>
 
         {/* FORM */}
@@ -128,23 +161,10 @@ function InputPost() {
           {/* EMOIJ */}
           <div
             onClick={() => setShowEmoij(!showEmoij)}
-            className="flex items-center space-x-1 cursor-pointer hover:text-blue-500 relative"
+            className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
           >
             <EmojiHappyIcon className="h-8 w-8 "></EmojiHappyIcon>
             <span className="text-lg">Cảm xúc</span>
-
-            {/* SHOW EMOIJ */}
-            {showEmoij && (
-              <Picker
-                onSelect={addEmoijIcon}
-                style={{
-                  position: "absolute",
-                  zIndex: 100,
-                  top: 35,
-                  left: -100,
-                }}
-              ></Picker>
-            )}
           </div>
         </div>
 

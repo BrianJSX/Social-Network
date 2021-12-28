@@ -5,20 +5,20 @@ import {
   PaperAirplaneIcon,
   PlusCircleIcon,
   SearchIcon,
-  UserGroupIcon,
+  UserGroupIcon
 } from "@heroicons/react/outline";
-
+import clsx from "clsx";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/dist/client/router";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import clsx from "clsx";
+import { useSelector } from "react-redux";
+
 
 function Header() {
-  //data session in next auth
+  const user = useSelector((state) => state.users);
   const { data: session } = useSession();
-  //router in next router
   const router = useRouter();
 
   return (
@@ -60,7 +60,7 @@ function Header() {
         {/* Right */}
         <div className="flex items-center justify-end xl:space-x-4 sm:space-x-3">
           <Link href="/">
-            <a className={clsx({active: router.pathname == "/"})}>
+            <a className={clsx({ active: router.pathname == "/" })}>
               <HomeIcon className="navBtn"></HomeIcon>
             </a>
           </Link>
@@ -74,11 +74,13 @@ function Header() {
                 </div>
               </div>
               <PlusCircleIcon className="navBtn"></PlusCircleIcon>
-              <UserGroupIcon className="navBtn"></UserGroupIcon>
+              <Link href="/posts">
+                <UserGroupIcon className="navBtn"></UserGroupIcon>
+              </Link>
               <HeartIcon className="navBtn"></HeartIcon>
               <img
                 className="h-10 w-10 object-contain border-2 rounded-full cursor-pointer"
-                src={session.user?.image}
+                src={user.avatar}
               ></img>
             </>
           ) : (

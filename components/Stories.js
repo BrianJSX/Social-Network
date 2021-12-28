@@ -1,12 +1,15 @@
 import fake from "faker";
+import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import Story from "./Story";
-import { useSession, signIn, signOut } from "next-auth/react"
 
 
 function Stories() {
   const [data, setData] = useState([]);
   const { data: session } = useSession()
+  const user = useSelector((state) => state.users);
+
 
   useEffect(() => {
     const dataFake = [...Array(20)].map((_, index) => ({
@@ -20,7 +23,7 @@ function Stories() {
   return (
     <div className="border-2 flex space-x-3 overflow-x-scroll p-5 scrollbar-thin scrollbar-thumb-black bg-white mt-6">
       {
-        session && <Story img={session.user?.image} username="Bạn"></Story>
+        session && <Story img={user.avatar} username="Bạn"></Story>
       }
       {data.map((item, index) => {
         return (
