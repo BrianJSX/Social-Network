@@ -65,35 +65,34 @@ function InputPost() {
     setSelectedFile(null);
     setShowEmoij(false);
 
-    setTimeout(async () => {
-      const docRef = await addDoc(collection(db, "posts"), {
-        uid: session.user.uid,
-        caption: input,
-        timestamp: serverTimestamp(),
-      });
+    const docRef = await addDoc(collection(db, "posts"), {
+      uid: user.uid,
+      avatar: user.avatar,
+      username: user.username,
+      name: user.name,
+      caption: input,
+      timestamp: serverTimestamp(),
+    });
 
-      if (selectedFile) {
-        const imageRef = ref(storage, `posts/${docRef.id}/image`);
-        await uploadString(imageRef, selectedFile, "data_url").then(
-          async () => {
-            const dataUrl = await getDownloadURL(imageRef);
-            await updateDoc(doc(db, "posts", docRef.id), {
-              image: dataUrl,
-            });
-          }
-        );
-      }
-      dispatch(isLoading(false));
-      toast.success("Đăng bài thành công !!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+    if (selectedFile) {
+      const imageRef = ref(storage, `posts/${docRef.id}/image`);
+      await uploadString(imageRef, selectedFile, "data_url").then(async () => {
+        const dataUrl = await getDownloadURL(imageRef);
+        await updateDoc(doc(db, "posts", docRef.id), {
+          image: dataUrl,
+        });
       });
-    }, 2000);
+    }
+    dispatch(isLoading(false));
+    toast.success("Đăng bài thành công !!", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
   };
 
   return (
