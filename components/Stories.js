@@ -21,7 +21,7 @@ function Stories() {
   }, []);
 
   return (
-    <div className="border-2 flex space-x-3 overflow-x-scroll p-5 scrollbar-thin scrollbar-thumb-black bg-white mt-6">
+    <div className="border-[1px] flex space-x-3 overflow-x-scroll p-5 scrollbar-thin scrollbar-thumb-black bg-white mt-6">
       {
         session && <Story img={user.avatar} username="Bạn"></Story>
       }
