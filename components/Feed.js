@@ -13,9 +13,9 @@ function Feed() {
     <div
       className={`${
         !session && "!grid-cols-1 !max-w-3xl"
-      } grid grid-cols-1 md:grid-cols-2 md:max-w-3xl xl:grid-cols-3 xl:max-w-6xl mx-auto`}
+      } grid grid-cols-1 md:grid-cols-2 md:max-w-3xl xl:grid-cols-6 xl:max-w-[59rem] mx-auto`}
     >
-      <section className="col-span-2">
+      <section className="col-span-4">
         {/* Stories */}
         <Stories></Stories>
         {/* Input Post */}
@@ -25,8 +25,8 @@ function Feed() {
       </section>
 
       {session && (
-        <section className="hidden xl:inline-block md:col-span-1">
-          <div className="fixed top-24 ml-5 border-2 rounded-md bg-white">
+        <section className="hidden xl:inline-block md:col-span-1 xl:col-span-1">
+          <div className="fixed top-24 ml-5 border-[1px] rounded-md bg-white">
             {/* Mini profile */}
             <MiniProfile></MiniProfile>
             <hr></hr>

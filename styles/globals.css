@@ -1,6 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "~react-image-gallery/styles/css/image-gallery.css";
+
+.image-gallery-content .image-gallery-slide .image-gallery-image {
+  max-height: none;
+}
+
+.image-gallery-slide .image-gallery-image {
+  object-fit: unset;
+}
+
+.image-gallery-slide img {
+  height: 580px;
+}
 
 @layer components {
   html { 
@@ -21,4 +34,17 @@
   .active { 
     @apply !text-blue-400
   }
+  .btnLiked {
+    color: red;
+  }
+  .anchorClass {
+    color: blue;
+  }
+  .boldUser + span {
+    @apply font-bold
+  }
+  .image { 
+    @apply bg-gray-600 h-[580px] object-cover w-full
+  }
+
 }

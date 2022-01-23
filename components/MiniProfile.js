@@ -9,7 +9,7 @@ function MiniProfile() {
     <div className="flex items-center m-5 space-x-5">
       <div>
         <img
-          className="rounded-full border-2 h-14 w-14 object-contain"
+          className="rounded-full border-[1px] h-14 w-14 object-contain"
           src={user.avatar}
         ></img>
       </div>
