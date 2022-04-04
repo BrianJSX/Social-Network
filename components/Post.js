@@ -4,11 +4,9 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
-  orderBy,
-  query,
+  onSnapshot, query,
   serverTimestamp,
-  setDoc,
+  setDoc, where
 } from "@firebase/firestore";
 import {
   BookmarkIcon,
@@ -16,21 +14,20 @@ import {
   DotsHorizontalIcon,
   EmojiHappyIcon,
   HeartIcon,
-  PaperAirplaneIcon,
+  PaperAirplaneIcon
 } from "@heroicons/react/outline";
 import {
   ArrowCircleLeftIcon,
-  ArrowCircleRightIcon,
+  ArrowCircleRightIcon, HeartIcon as HeartIconLiked
 } from "@heroicons/react/solid";
-import { HeartIcon as HeartIconLiked } from "@heroicons/react/solid";
 import { Picker } from "emoji-mart";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import router from "next/router";
 import React, { useEffect, useRef, useState } from "react";
+import ImageGallery from "react-image-gallery";
 import Moment from "react-moment";
 import { useSelector } from "react-redux";
 import { db } from "../firebase";
-import ImageGallery from "react-image-gallery";
 import ShowMoreText from "./ShowMoreText";
 
 function Post(props) {
@@ -47,6 +44,8 @@ function Post(props) {
   const [input, setInput] = useState("");
   const [openEmoji, setOpenEmoji] = useState(false);
 
+  const [users, setUsers] = useState();
+
   const refInputForm = useRef();
 
   useEffect(() => {
@@ -61,16 +60,20 @@ function Post(props) {
     });
 
     // Comment
-    onSnapshot(
-      query(
-        collection(db, "posts", props.id, "comments"),
-        orderBy("timestamp", "desc"),
-        limit(2)
-      ),
-      (snapshot) => {
-        setComments(snapshot.docs);
-      }
+    const commentRef = query(
+      collection(db, "comments"),
+      where("postId", "==", props.id),
+      limit(2)
     );
+
+    onSnapshot(commentRef, (querySnapshot) => {
+      const comments = [];
+      querySnapshot.forEach((doc) => {
+        comments.push(doc);
+      });
+      setComments(comments);
+    });
+    
   }, [db, props.id]);
 
   useEffect(() => {
@@ -78,15 +81,26 @@ function Post(props) {
   }, [likes]);
 
   useEffect(() => {
+    if (props.post.uid) {
+      const userRef = query(
+        collection(db, "users"),
+        where("uid", "==", props.post.uid)
+      );
+
+      onSnapshot(userRef, (querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          setUsers(doc.data());
+        });
+      });
+    }
+  }, [db, user])
+  
+  useEffect(() => {
     setImages([]);
     listImages.map((doc) => {
       setImages((preState) => [...preState, doc.data()]);
     });
   }, [listImages]);
-
-  const handleInputForcus = () => {
-    refInputForm.current.focus();
-  };
 
   // Handle Like
   const handleUnLiked = async () => {
@@ -117,10 +131,11 @@ function Post(props) {
 
   // Handle Comment
   const handleAddComment = async () => {
-    await addDoc(collection(db, "posts", props.id, "comments"), {
+    const docRef = await addDoc(collection(db, "comments"), {
+      userId: user.uid,
       username: user.username,
-      avatar: user.avatar,
       comment: input,
+      postId: props.id,
       timestamp: serverTimestamp(),
     });
     setInput("");
@@ -132,10 +147,10 @@ function Post(props) {
       <div className="flex items-center p-2 space-x-2 border-b-2">
         <img
           className="rounded-full h-12 w-12 object-contain p-1 border"
-          src={props.post?.avatar}
+          src={users?.avatar}
         ></img>
         <p className="flex-1 font-bold">
-          {props.post?.username}{" "}
+          {users?.username}{" "}
           <span className="!font-thin !text-gray-400 ">
             <Moment fromNow>{props.post?.timestamp?.toDate()}</Moment>
           </span>
@@ -189,9 +204,16 @@ function Post(props) {
               ) : (
                 <HeartIcon onClick={handleLike} className="btn"></HeartIcon>
               )}
-              <Link href={`/posts/${props.id}`}>
-                <ChatIcon className="btn"></ChatIcon>
-              </Link>
+              <ChatIcon
+                onClick={() =>
+                  router.push(
+                    `/?openPost=true&postId=${props.id}`,
+                    `/posts/${props.id}`,
+                    { shallow: true }
+                  )
+                }
+                className="btn"
+              ></ChatIcon>
               <PaperAirplaneIcon className="btn"></PaperAirplaneIcon>
             </div>
             <BookmarkIcon className="btn"></BookmarkIcon>
@@ -221,7 +243,7 @@ function Post(props) {
               <div className="flex">
                 <p>
                   <span className="user font-bold mr-1">
-                    {doc.data().username}
+                    {users?.username}
                   </span>
                   <span className="font-thin break-all p-1">
                     {doc.data().comment.length > 50 ? (
@@ -236,12 +258,21 @@ function Post(props) {
               </div>
             );
           })}
+
+          {/* All comment */}
           {comments?.length >= 2 && (
-            <Link href={`/posts/${props.id}`}>
-              <div className="cursor-pointer text-gray-400">
-                Xem tất cả bình luận
-              </div>
-            </Link>
+            <div
+              onClick={() =>
+                router.push(
+                  `/?openPost=true&postId=${props.id}`,
+                  `/posts/${props.id}`,
+                  { shallow: true }
+                )
+              }
+              className="cursor-pointer text-gray-400"
+            >
+              Xem tất cả bình luận
+            </div>
           )}
         </div>
       )}

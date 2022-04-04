@@ -8,7 +8,9 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  where,
 } from "@firebase/firestore";
+
 import {
   BookmarkIcon,
   ChatIcon,
@@ -32,6 +34,7 @@ import { useSelector } from "react-redux";
 import { db } from "../firebase";
 import { Picker } from "emoji-mart";
 import ShowMoreText from "./ShowMoreText";
+import Comments from "./Comments";
 
 function PostModal(props) {
   const router = useRouter();
@@ -42,6 +45,8 @@ function PostModal(props) {
 
   const [liked, setLiked] = useState(null);
   const [likes, setLikes] = useState(null);
+  const [users, setUsers] = useState(null);
+
   const [comments, setComments] = useState(null);
 
   const [input, setInput] = useState("");
@@ -58,22 +63,45 @@ function PostModal(props) {
       );
 
       // Comment
-      onSnapshot(
-        query(
-          collection(db, "posts", props.post_id, "comments"),
-          orderBy("timestamp", "desc")
-        ),
-        (snapshot) => {
-          setComments(snapshot.docs);
-        }
+      const commentRef = query(
+        collection(db, "comments"),
+        where("postId", "==", props.post_id),
       );
+
+      onSnapshot(commentRef, (querySnapshot) => {
+        const comments = [];
+        querySnapshot.forEach((doc) => {
+          comments.push(doc);
+        });
+        setComments(comments);
+      });
+      
     }
   }, [db, props.post_id]);
 
   useEffect(() => {
+    if (props.post.uid) {
+      const userRef = query(
+        collection(db, "users"),
+        where("uid", "==", props.post.uid),
+      );
+
+      onSnapshot(userRef, (querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          setUsers(doc.data());
+        });
+      });
+    }
+  }, [db, user])
+  
+  useEffect(() => {
     setLiked(likes?.findIndex((like) => like.id == user.uid) !== -1);
   }, [likes]);
 
+  //handle focus
+  const handleFocus = () => {
+    refInputForm.current.focus();
+  };
   // Handle Like
   const handleUnLiked = async () => {
     await deleteDoc(doc(db, "posts", props.post_id, "likes", user.uid));
@@ -103,10 +131,11 @@ function PostModal(props) {
 
   // Handle Comment
   const handleAddComment = async () => {
-    await addDoc(collection(db, "posts", props.post_id, "comments"), {
+    const docRef = await addDoc(collection(db, "comments"), {
+      userId: user.uid,
       username: user.username,
-      avatar: user.avatar,
       comment: input,
+      postId: props.post_id,
       timestamp: serverTimestamp(),
     });
     setInput("");
@@ -135,7 +164,9 @@ function PostModal(props) {
         >
           <div
             className={`grid  ${
-              images?.length > 0 ? "grid-cols-2" : "grid-cols-1 h-[550px]"
+              images?.length > 0
+                ? "grid-cols-2"
+                : "grid-cols-1 h-[550px] max-h-[550px]"
             }`}
           >
             {images?.length > 0 && (
@@ -163,192 +194,158 @@ function PostModal(props) {
               />
             )}
             <div className="grid-cols-1">
-              <div className="flex flex-col h-full">
-                {/* Header */}
+              <div className="flex flex-col justify-between h-full">
+                {/* HEADER */}
                 <div className="flex items-center p-2 space-x-2 border-b-[1px]">
                   <img
                     className="rounded-full h-12 w-12 object-contain p-1 border"
-                    src={props.post?.avatar}
+                    src={users?.avatar}
                   ></img>
                   <p className="flex-1 font-medium space-x-2">
-                    <span>{props.post?.username}</span>
+                    <span>{users?.username}</span>
                     <span className="!font-thin !text-gray-400 "></span>
                   </p>
                   <DotsHorizontalIcon className="h-5 w-5"></DotsHorizontalIcon>
                 </div>
 
-                {/* Caption */}
-                {images?.length > 0 ? (
-                  <React.Fragment>
-                    <div className="flex-auto h-72 border-b-[1px] overflow-y-auto overflow-hidden">
-                      <div className="flex items-center p-2 space-x-2">
-                        <img
-                          className="rounded-full h-12 w-12 object-contain p-1 border-[1px]"
-                          src={props.post?.avatar}
-                        ></img>
-                        <p className="flex-1 space-x-1 flex-wrap break-all">
-                          <span className=" font-medium">
-                            {props.post?.username}
-                          </span>
-                          <span className="!font-thin">
-                            <ShowMoreText
-                              text={props.post?.caption}
-                            ></ShowMoreText>
-                          </span>
-                          <Moment className="text-xs p-1 text-gray-300" fromNow>
-                            {props.post?.timestamp?.toDate()}
-                          </Moment>
-                        </p>
-                      </div>
+                {/* MAIN */}
+                <div className="flex-1 flex-col">
+                  {/* Caption */}
+                  {images?.length > 0 ? (
+                    <React.Fragment>
+                      <div className="flex-1 max-h-96 border-b-[1px] overflow-y-auto overflow-hidden">
+                        <div className="flex items-center p-2 space-x-2">
+                          <img
+                            className="rounded-full h-12 w-12 object-contain p-1 border-[1px]"
+                            src={props.post?.avatar}
+                          ></img>
+                          <p className="flex-1 space-x-1 flex-wrap break-all">
+                            <span className=" font-medium">
+                              {props.post?.username}
+                            </span>
+                            <span className="!font-thin">
+                              <ShowMoreText
+                                text={props.post?.caption}
+                              ></ShowMoreText>
+                            </span>
+                            <Moment
+                              className="text-xs p-1 text-gray-300"
+                              fromNow
+                            >
+                              {props.post?.timestamp?.toDate()}
+                            </Moment>
+                          </p>
+                        </div>
 
-                      {/* Comment */}
-                      {comments?.map((doc) => (
-                        <React.Fragment>
-                          <div className="flex">
-                            <div className="flex items-center p-2 space-x-2">
-                              <img
-                                className="rounded-full h-12 w-12 object-contain p-1 border-[1px]"
-                                src={doc.data().avatar}
-                              ></img>
-                              <p className="flex-1 space-x-1">
-                                <span className=" font-medium">
-                                  {doc.data().username}
-                                </span>
-                                <span className="!font-thin break-all">
-                                  <ShowMoreText
-                                    text={doc.data().comment}
-                                  ></ShowMoreText>
-                                </span>
-                                <span>
-                                  <Moment
-                                    className="text-xs p-1 text-gray-300"
-                                    fromNow
-                                  >
-                                    {doc.data().timestamp?.toDate()}
-                                  </Moment>
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </React.Fragment>
-                ) : (
-                  <React.Fragment>
-                    <div className="max-h-40 m-2 overflow-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-black">
-                      <p className="text-xl break-all">
-                        <ShowMoreText text={props.post?.caption}></ShowMoreText>
-                      </p>
-                    </div>
-                    {comments?.length > 0 ? (
-                      <div className="flex-auto h-32 overflow-hidden overflow-y-auto border-t-[1px] scrollbar-thin scrollbar-thumb-black">
+                        {/* Comment */}
                         {comments?.map((doc) => (
-                          <React.Fragment>
-                            <div className="flex">
-                              <div className="flex items-center p-2 space-x-2">
-                                <img
-                                  className="rounded-full h-12 w-12 object-contain p-1 border-[1px]"
-                                  src={doc.data().avatar}
-                                ></img>
-                                <p className="flex-1 space-x-1">
-                                  <span className=" font-medium">
-                                    {doc.data().username}
-                                  </span>
-                                  <span className="!font-thin break-all">
-                                    <ShowMoreText
-                                      text={doc.data().comment}
-                                    ></ShowMoreText>
-                                  </span>
-                                  <span>
-                                    <Moment className="text-xs p-3" fromNow>
-                                      {doc.data().timestamp?.toDate()}
-                                    </Moment>
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                          </React.Fragment>
+                          <Comments user={doc.data()}></Comments>
                         ))}
                       </div>
-                    ) : (
-                      <div className="p-3 border-[1px]">Chưa có bình luận</div>
-                    )}
-                  </React.Fragment>
-                )}
-
-                {/* Action */}
-                {session && (
-                  <React.Fragment>
-                    <div className="flex justify-between items-center p-2">
-                      <div className="flex items-center space-x-3">
-                        {liked ? (
-                          <HeartIconLiked
-                            onClick={handleUnLiked}
-                            className="btn btnLiked"
-                          ></HeartIconLiked>
-                        ) : (
-                          <HeartIcon
-                            onClick={handleLike}
-                            className="btn"
-                          ></HeartIcon>
-                        )}
-                        <ChatIcon className="btn"></ChatIcon>
-                        <PaperAirplaneIcon className="btn"></PaperAirplaneIcon>
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment>
+                      <div className="max-h-56 p-1 overflow-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-black">
+                        <p className="text-xl break-all">
+                          <ShowMoreText
+                            text={props.post?.caption}
+                          ></ShowMoreText>
+                        </p>
                       </div>
-                      <BookmarkIcon className="btn"></BookmarkIcon>
-                    </div>
-                    {likes?.length > 0 && (
-                      <div className="flex pl-2 font-bold">
-                        {likes?.length} Likes
-                      </div>
-                    )}
-                    <div className="flex p-2 text-xs relative">
-                      <Moment fromNow>{props.post?.timestamp?.toDate()}</Moment>
-                      {openEmoji && (
-                        <div
-                          className="absolute z-50 bg-gray-300"
-                          style={{ top: -400 }}
-                        >
-                          <Picker onSelect={handleAddEmoji} />
+                      {comments?.length > 0 ? (
+                        <div className="h-44 border-b-[1px] overflow-hidden overflow-y-auto border-t-[1px] scrollbar-thin scrollbar-thumb-black">
+                          {comments?.map((doc) => (
+                            <Comments user={doc.data()}></Comments>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="h-16 p-3 border-[1px]">
+                          Chưa có bình luận
                         </div>
                       )}
-                    </div>
-                  </React.Fragment>
-                )}
+                    </React.Fragment>
+                  )}
+                </div>
 
-                {/* Input Comment */}
-                {session && (
-                  <React.Fragment>
-                    <div className="relative">
-                      <div className="flex item-center border-t-2">
-                        {/* Emoji */}
-                        <EmojiHappyIcon
-                          onClick={handleEmoji}
-                          className="h-7 w-7 m-2 cursor-pointer"
-                        ></EmojiHappyIcon>
-
-                        {/* Input */}
-                        <input
-                          ref={refInputForm}
-                          value={input}
-                          onChange={handleInput}
-                          type="text"
-                          placeholder="Thêm bình luận của bạn....."
-                          className="flex-1 focus:ring-transparent bg-gray-125 outline-none border-none"
-                        ></input>
-
-                        {/* Button */}
-                        <button
-                          onClick={handleAddComment}
-                          className="font-bold text-blue-400 m-2"
-                        >
-                          Bình luận
-                        </button>
+                <div className="flex flex-col">
+                  {/* Action */}
+                  {session && (
+                    <React.Fragment>
+                      <div className="flex justify-between items-center p-2">
+                        <div className="flex items-center space-x-3">
+                          {liked ? (
+                            <HeartIconLiked
+                              onClick={handleUnLiked}
+                              className="btn btnLiked"
+                            ></HeartIconLiked>
+                          ) : (
+                            <HeartIcon
+                              onClick={handleLike}
+                              className="btn"
+                            ></HeartIcon>
+                          )}
+                          <ChatIcon
+                            onClick={handleFocus}
+                            className="btn"
+                          ></ChatIcon>
+                          <PaperAirplaneIcon className="btn"></PaperAirplaneIcon>
+                        </div>
+                        <BookmarkIcon className="btn"></BookmarkIcon>
                       </div>
-                    </div>
-                  </React.Fragment>
-                )}
+                      {likes?.length > 0 && (
+                        <div className="flex pl-2 font-bold">
+                          {likes?.length} Likes
+                        </div>
+                      )}
+                      <div className="flex p-2 text-xs relative">
+                        <Moment fromNow>
+                          {props.post?.timestamp?.toDate()}
+                        </Moment>
+                        {openEmoji && (
+                          <div
+                            className="absolute z-50 bg-gray-300"
+                            style={{ top: -400 }}
+                          >
+                            <Picker onSelect={handleAddEmoji} />
+                          </div>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  )}
+
+                  {/* Input Comment */}
+                  {session && (
+                    <React.Fragment>
+                      <div className="flex-col relative">
+                        <div className="flex item-center border-t-2">
+                          {/* Emoji */}
+                          <EmojiHappyIcon
+                            onClick={handleEmoji}
+                            className="h-7 w-7 m-2 cursor-pointer"
+                          ></EmojiHappyIcon>
+
+                          {/* Input */}
+                          <input
+                            ref={refInputForm}
+                            value={input}
+                            onChange={handleInput}
+                            type="text"
+                            placeholder="Thêm bình luận của bạn....."
+                            className="flex-1 focus:ring-transparent bg-gray-125 outline-none border-none"
+                          ></input>
+
+                          {/* Button */}
+                          <button
+                            onClick={handleAddComment}
+                            className="font-bold text-blue-400 m-2"
+                          >
+                            Bình luận
+                          </button>
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  )}
+                </div>
               </div>
             </div>
           </div>

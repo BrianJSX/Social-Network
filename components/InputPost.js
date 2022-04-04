@@ -5,6 +5,7 @@ import {
   PhotographIcon,
   XIcon,
   XCircleIcon,
+  FilmIcon
 } from "@heroicons/react/outline";
 import { Picker } from "emoji-mart";
 import {
@@ -51,6 +52,7 @@ function InputPost() {
       if (e.target.files[i]) {
         reader.readAsDataURL(e.target.files[i]);
       }
+
       reader.onload = (file) => {
         let data = {
           id: Math.random(),
@@ -98,16 +100,14 @@ function InputPost() {
       selectedFile.map(async (image, index) => {
         const imageRef = ref(storage, `posts/${docRef.id}/${image.id}/image`);
 
-        await uploadString(imageRef, image.src, "data_url").then(
-          async () => {
-            const dataUrl = await getDownloadURL(imageRef);
-            await addDoc(collection(db, "posts", docRef.id, "images"), {
-              original: dataUrl,
-              thumbnail: dataUrl,
-              originalHeight: "100%"
-            });
-          }
-        );
+        await uploadString(imageRef, image.src, "data_url").then(async () => {
+          const dataUrl = await getDownloadURL(imageRef);
+          await addDoc(collection(db, "posts", docRef.id, "images"), {
+            original: dataUrl,
+            thumbnail: dataUrl,
+            originalHeight: "100%",
+          });
+        });
       });
     }
 
@@ -137,6 +137,7 @@ function InputPost() {
           margin={2}
         />
       )}
+
       {/* SHOW EMOIJ */}
       {showEmoij && (
         <Picker
@@ -148,6 +149,7 @@ function InputPost() {
           }}
         ></Picker>
       )}
+      
       <div className="flex items-center">
         {/* AVATAR */}
         <img
@@ -177,8 +179,8 @@ function InputPost() {
             onClick={() => filePickerRef.current.click()}
             className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
           >
-            <PhotographIcon className="h-8 w-8 cursor-pointer"></PhotographIcon>
-            <span className="text-lg">Ảnh/Video</span>
+            <PhotographIcon className="h-6 w-6 cursor-pointer"></PhotographIcon>
+            <span className="text-lg">Ảnh</span>
             <input
               type="file"
               multiple
@@ -193,9 +195,26 @@ function InputPost() {
             onClick={() => setShowEmoij(!showEmoij)}
             className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
           >
-            <EmojiHappyIcon className="h-8 w-8 "></EmojiHappyIcon>
+            <EmojiHappyIcon className="h-6 w-6 "></EmojiHappyIcon>
             <span className="text-lg">Cảm xúc</span>
           </div>
+
+          {/* Video */}
+          <div
+            onClick={() => filePickerRef.current.click()}
+            className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
+          >
+            <FilmIcon className="h-6 w-6 cursor-pointer"></FilmIcon>
+            <span className="text-lg">Video</span>
+            <input
+              type="file"
+              multiple
+              onChange={addImagePost}
+              ref={filePickerRef}
+              hidden
+            ></input>
+          </div>
+
         </div>
 
         {/* BUTTON SEND */}
@@ -238,10 +257,10 @@ function InputPost() {
               <div className="flex-shrink-0 relative mt-10  mb-2">
                 <XIcon
                   onClick={() => handleRemoveOneImage(index)}
-                  className="w-8 h-8 cursor-pointer absolute text-white right-0"
+                  className="w-8 h-8 cursor-pointer absolute text-gray-400 right-0"
                 ></XIcon>
                 <img
-                  className="w-[150px] h-[150px] rounded-md"
+                  className="w-[150px] h-[150px] border-[1px] rounded-md object-contain"
                   src={item.src}
                 ></img>
               </div>

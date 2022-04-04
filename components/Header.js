@@ -5,7 +5,7 @@ import {
   PaperAirplaneIcon,
   PlusCircleIcon,
   SearchIcon,
-  UserGroupIcon
+  UserGroupIcon,
 } from "@heroicons/react/outline";
 import clsx from "clsx";
 import { signIn, useSession } from "next-auth/react";
@@ -75,10 +75,12 @@ function Header() {
               <PlusCircleIcon className="navBtn"></PlusCircleIcon>
               <UserGroupIcon className="navBtn"></UserGroupIcon>
               <HeartIcon className="navBtn"></HeartIcon>
-              <img
-                className="h-10 w-10 object-contain border-[1px] rounded-full cursor-pointer"
-                src={user.avatar}
-              ></img>
+              <Link href={`/profile/${session.user.uid}`}>
+                <img
+                  className="h-10 w-10 object-contain border-[1px] rounded-full cursor-pointer"
+                  src={user.avatar}
+                ></img>
+              </Link>
             </>
           ) : (
             <button onClick={signIn} className="font-medium text-xl ">
