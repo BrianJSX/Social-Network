@@ -1,8 +1,11 @@
+import { css } from "@emotion/react";
 import { getDownloadURL, ref, uploadString } from "@firebase/storage";
 import {
   EmojiHappyIcon,
   PhotographIcon,
   XIcon,
+  XCircleIcon,
+  FilmIcon
 } from "@heroicons/react/outline";
 import { Picker } from "emoji-mart";
 import {
@@ -10,16 +13,16 @@ import {
   collection,
   doc,
   serverTimestamp,
+  setDoc,
   updateDoc,
 } from "firebase/firestore";
 import { useSession } from "next-auth/react";
-import React, { useRef, useState } from "react";
-import { db, storage } from "../firebase";
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import ScaleLoader from "react-spinners/ScaleLoader";
-import { css } from "@emotion/react";
-import { useSelector, useDispatch } from "react-redux";
-import { isLoading } from "../features/loading/loadingSlice";
 import { toast } from "react-toastify";
+import { isLoading } from "../features/loading/loadingSlice";
+import { db, storage } from "../firebase";
 
 function InputPost() {
   const { data: session } = useSession();
@@ -27,7 +30,7 @@ function InputPost() {
 
   //state
   const [input, setInput] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState([]);
   const [showEmoij, setShowEmoij] = useState(false);
 
   //gobal state
@@ -44,25 +47,40 @@ function InputPost() {
   `;
 
   const addImagePost = (e) => {
-    const reader = new FileReader();
+    for (let i = 0; i < e.target.files.length; i++) {
+      const reader = new FileReader();
+      if (e.target.files[i]) {
+        reader.readAsDataURL(e.target.files[i]);
+      }
 
-    if (e.target.files[0] && e.target.files[0].type == "image/png") {
-      reader.readAsDataURL(e.target.files[0]);
+      reader.onload = (file) => {
+        let data = {
+          id: Math.random(),
+          src: String(file.target.result),
+        };
+        setSelectedFile((preState) => [...preState, data]);
+      };
     }
-    reader.onload = (file) => {
-      console.log(file);
-      setSelectedFile(file.target.result);
-    };
   };
 
   const addEmoijIcon = (emoji) => {
     setInput((input += emoji.native));
   };
 
+  const handleRemoveAllImage = () => {
+    setSelectedFile([]);
+    filePickerRef.current.value = null;
+  };
+
+  const handleRemoveOneImage = (index) => {
+    const newArr = selectedFile.filter((item) => item !== selectedFile[index]);
+    setSelectedFile(newArr);
+  };
+
   const sendPost = async () => {
     dispatch(isLoading(true));
     setInput("");
-    setSelectedFile(null);
+    setSelectedFile([]);
     setShowEmoij(false);
 
     const docRef = await addDoc(collection(db, "posts"), {
@@ -74,15 +92,25 @@ function InputPost() {
       timestamp: serverTimestamp(),
     });
 
+    await updateDoc(doc(db, "posts", docRef.id), {
+      post_id: docRef.id,
+    });
+
     if (selectedFile) {
-      const imageRef = ref(storage, `posts/${docRef.id}/image`);
-      await uploadString(imageRef, selectedFile, "data_url").then(async () => {
-        const dataUrl = await getDownloadURL(imageRef);
-        await updateDoc(doc(db, "posts", docRef.id), {
-          image: dataUrl,
+      selectedFile.map(async (image, index) => {
+        const imageRef = ref(storage, `posts/${docRef.id}/${image.id}/image`);
+
+        await uploadString(imageRef, image.src, "data_url").then(async () => {
+          const dataUrl = await getDownloadURL(imageRef);
+          await addDoc(collection(db, "posts", docRef.id, "images"), {
+            original: dataUrl,
+            thumbnail: dataUrl,
+            originalHeight: "100%",
+          });
         });
       });
     }
+
     dispatch(isLoading(false));
     toast.success("Đăng bài thành công !!", {
       position: "top-right",
@@ -96,7 +124,7 @@ function InputPost() {
   };
 
   return (
-    <div className="bg-white border-2 rounded-lg p-3 mt-5 space-x-5 relative">
+    <div className="bg-white border-[1px] rounded-lg p-3 mt-5 space-x-5 relative">
       {/* Loading */}
       {loading && (
         <ScaleLoader
@@ -109,25 +137,28 @@ function InputPost() {
           margin={2}
         />
       )}
+
       {/* SHOW EMOIJ */}
       {showEmoij && (
         <Picker
           onSelect={addEmoijIcon}
           style={{
+            zIndex: 10000,
             position: "absolute",
             top: 150,
           }}
         ></Picker>
       )}
+      
       <div className="flex items-center">
         {/* AVATAR */}
         <img
-          className="h-10 w-10 object-contain border-2 rounded-full cursor-pointer"
+          className="h-10 w-10 object-contain border-[1px] rounded-full cursor-pointer"
           src={user.avatar}
         ></img>
 
         {/* FORM */}
-        <div className="w-full border-2 rounded-lg m-3">
+        <div className="w-full border-[1px] rounded-lg m-3">
           <div>
             <textarea
               className="overflow-y-hidden tracking-wide bg-transparent rounded-xl w-full border-transparent focus:ring-transparent focus:border-transparent"
@@ -148,10 +179,11 @@ function InputPost() {
             onClick={() => filePickerRef.current.click()}
             className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
           >
-            <PhotographIcon className="h-8 w-8 cursor-pointer"></PhotographIcon>
-            <span className="text-lg">Ảnh/Video</span>
+            <PhotographIcon className="h-6 w-6 cursor-pointer"></PhotographIcon>
+            <span className="text-lg">Ảnh</span>
             <input
               type="file"
+              multiple
               onChange={addImagePost}
               ref={filePickerRef}
               hidden
@@ -163,9 +195,26 @@ function InputPost() {
             onClick={() => setShowEmoij(!showEmoij)}
             className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
           >
-            <EmojiHappyIcon className="h-8 w-8 "></EmojiHappyIcon>
+            <EmojiHappyIcon className="h-6 w-6 "></EmojiHappyIcon>
             <span className="text-lg">Cảm xúc</span>
           </div>
+
+          {/* Video */}
+          <div
+            onClick={() => filePickerRef.current.click()}
+            className="flex items-center space-x-1 cursor-pointer hover:text-blue-500"
+          >
+            <FilmIcon className="h-6 w-6 cursor-pointer"></FilmIcon>
+            <span className="text-lg">Video</span>
+            <input
+              type="file"
+              multiple
+              onChange={addImagePost}
+              ref={filePickerRef}
+              hidden
+            ></input>
+          </div>
+
         </div>
 
         {/* BUTTON SEND */}
@@ -181,18 +230,42 @@ function InputPost() {
       </div>
 
       {/* SHOW IMAGE */}
-      {selectedFile && (
-        <div className="relative m-3 border-2">
+      {selectedFile?.length == 1 && (
+        <div className="relative m-3 border-[1px]">
           <div className="absolute w-10 h-10 top-1 left-5">
             <XIcon
-              onClick={() => setSelectedFile(null)}
+              onClick={handleRemoveAllImage}
               className="cursor-pointer"
             ></XIcon>
           </div>
           <img
-            className="w-full h-96 cursor-pointer mx-auto"
-            src={selectedFile}
+            className="h-96 cursor-pointer object-fill mx-auto"
+            src={selectedFile[0]?.src}
           ></img>
+        </div>
+      )}
+
+      {/* SHOW IMAGE */}
+      {selectedFile?.length > 1 && (
+        <div className="relative m-5 border-[1px] p-2 rounded-md">
+          <XCircleIcon
+            onClick={handleRemoveAllImage}
+            className="w-8 h-8 cursor-pointer absolute z-10 right-2"
+          ></XCircleIcon>
+          <div className="flex overflow-auto space-x-2">
+            {selectedFile.map((item, index) => (
+              <div className="flex-shrink-0 relative mt-10  mb-2">
+                <XIcon
+                  onClick={() => handleRemoveOneImage(index)}
+                  className="w-8 h-8 cursor-pointer absolute text-gray-400 right-0"
+                ></XIcon>
+                <img
+                  className="w-[150px] h-[150px] border-[1px] rounded-md object-contain"
+                  src={item.src}
+                ></img>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

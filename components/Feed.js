@@ -8,25 +8,29 @@ import InputPost from "./InputPost";
 
 function Feed() {
   const { data: session } = useSession();
-  
+
   return (
     <div
       className={`${
         !session && "!grid-cols-1 !max-w-3xl"
-      } grid grid-cols-1 md:grid-cols-2 md:max-w-3xl xl:grid-cols-3 xl:max-w-6xl mx-auto`}
+      } grid grid-cols-1 md:grid-cols-2 md:max-w-3xl xl:grid-cols-6 xl:max-w-[59rem] mx-auto`}
     >
-      <section className="col-span-2">
-        {/* Stories */}
-        <Stories></Stories>
-        {/* Input Post */}
-        {session && <InputPost></InputPost>}
+      <section className="col-span-4 h-screen">
+        {/* Stories and InputPost*/}
+        {session && (
+          <React.Fragment>
+            <Stories></Stories>
+            <InputPost></InputPost>
+          </React.Fragment>
+        )}
+
         {/* Post */}
         <Posts></Posts>
       </section>
 
       {session && (
-        <section className="hidden xl:inline-block md:col-span-1">
-          <div className="fixed top-24 ml-5 border-2 rounded-md bg-white">
+        <section className="hidden xl:inline-block md:col-span-1 xl:col-span-1">
+          <div className="fixed top-24 ml-5 border-[1px] rounded-md bg-white">
             {/* Mini profile */}
             <MiniProfile></MiniProfile>
             <hr></hr>

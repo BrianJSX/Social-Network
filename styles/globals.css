@@ -1,10 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "~react-image-gallery/styles/css/image-gallery.css";
+
+.image-gallery-content .image-gallery-slide .image-gallery-image {
+  max-height: none;
+}
+
+.image-gallery-slide .image-gallery-image {
+  object-fit: unset;
+}
+
+.image-gallery-slide img {
+  height: 580px;
+}
+
+.center-element { 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) ;
+}
+
+.infoPost {
+  visibility: hidden;
+  background-color: rgba(15, 17, 17, 0.426);
+}
+
+.infoPost:hover {
+  visibility: visible;
+  background-color: rgba(15, 17, 17, 0.426);
+}
+
+.postHover:hover ~ .infoPost {
+  visibility: visible;
+  transition: background-color 2s ease-out;
+}
 
 @layer components {
-  html { 
-    @apply overflow-x-hidden
+  html {
+    @apply overflow-x-hidden;
   }
   .navBtn {
     @apply hidden h-8
@@ -13,12 +48,24 @@
     hover:scale-125
     transition-all duration-75 ease-out;
   }
-  .btn { 
+  .btn {
     @apply h-8 w-8
     hover:scale-125
     transition-all duration-75 ease-out cursor-pointer;
   }
-  .active { 
-    @apply !text-blue-400
+  .active {
+    @apply !text-blue-400;
+  }
+  .btnLiked {
+    color: red;
+  }
+  .anchorClass {
+    color: blue;
+  }
+  .boldUser + span {
+    @apply font-bold;
+  }
+  .image {
+    @apply bg-gray-600 h-[580px] object-cover w-full;
   }
 }

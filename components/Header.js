@@ -5,7 +5,7 @@ import {
   PaperAirplaneIcon,
   PlusCircleIcon,
   SearchIcon,
-  UserGroupIcon
+  UserGroupIcon,
 } from "@heroicons/react/outline";
 import clsx from "clsx";
 import { signIn, useSession } from "next-auth/react";
@@ -15,7 +15,6 @@ import Link from "next/link";
 import React from "react";
 import { useSelector } from "react-redux";
 
-
 function Header() {
   const user = useSelector((state) => state.users);
   const { data: session } = useSession();
@@ -23,7 +22,7 @@ function Header() {
 
   return (
     <div className="sticky top-0 w-screen bg-white shadow-sm border-b z-50 ">
-      <div className="flex justify-between max-w-6xl  xl:mx-auto items-center p-2">
+      <div className="flex justify-between max-w-5xl  xl:mx-auto items-center p-2">
         {/* Left  */}
         <div
           onClick={() => router.push("/")}
@@ -48,7 +47,7 @@ function Header() {
         </div>
 
         {/* Middle */}
-        <div className="flex items-center p-1 border-2 rounded-md mx-1">
+        <div className="flex items-center p-1 border-[1px] rounded-md mx-1">
           <SearchIcon className="h-5 w-10 text-gray-400 cursor-pointer" />
           <input
             className="border-transparent h-8 focus:ring-transparent focus:border-transparent"
@@ -74,14 +73,14 @@ function Header() {
                 </div>
               </div>
               <PlusCircleIcon className="navBtn"></PlusCircleIcon>
-              <Link href="/posts">
-                <UserGroupIcon className="navBtn"></UserGroupIcon>
-              </Link>
+              <UserGroupIcon className="navBtn"></UserGroupIcon>
               <HeartIcon className="navBtn"></HeartIcon>
-              <img
-                className="h-10 w-10 object-contain border-2 rounded-full cursor-pointer"
-                src={user.avatar}
-              ></img>
+              <Link href={`/profile/${session.user.uid}`}>
+                <img
+                  className="h-10 w-10 object-contain border-[1px] rounded-full cursor-pointer"
+                  src={user.avatar}
+                ></img>
+              </Link>
             </>
           ) : (
             <button onClick={signIn} className="font-medium text-xl ">

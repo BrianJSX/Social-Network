@@ -12,25 +12,26 @@ import NProgress from "nprogress";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }) {
   const Layout = Component.Layout ?? EmptyLayout;
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  NProgress.configure({ parent: '#parent', showSpinner: false });
+  // const [loading, setLoading] = useState(false);
+  // const router = useRouter();
+  // NProgress.configure({ parent: '#parent', showSpinner: false });
 
-  router.events?.on("routeChangeStart", () => {
-    NProgress.start();
-    setLoading(true);
-  });
+  // router.events?.on("routeChangeStart", () => {
+  //   NProgress.start();
+  //   setLoading(true);
+  // });
 
-  router.events?.on("routeChangeComplete", () => {
-    NProgress.done();
-    setLoading(false);
-  });
+  // router.events?.on("routeChangeComplete", () => {
+  //   NProgress.done();
+  //   setLoading(false);
+  // });
 
   return (
     <Provider store={store}>
       <SessionProvider session={session}>
         <Layout>
-          {!loading && <Component {...pageProps} />}
+          {/* {!loading && <Component {...pageProps} />} */}
+          <Component {...pageProps} />
           <ToastContainer />
         </Layout>
       </SessionProvider>
